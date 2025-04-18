@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Data Ingestion & Export Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen p-8">
+  <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-12">
+    <h1 class="text-3xl font-extrabold text-center">Data Ingestion & Export Tool</h1>
+
+    <!-- Source Selector -->
+    <div class="flex items-center space-x-4">
+      <i class="fas fa-exchange-alt text-xl text-gray-600"></i>
+      <label for="sourceSelect" class="font-semibold">Select Source:</label>
+      <select id="sourceSelect" class="flex-1 p-3 border border-gray-300 rounded-lg hover:border-gray-400">
+        <option value="ingest">CSV → ClickHouse</option>
+        <option value="export">ClickHouse → CSV</option>
+      </select>
+    </div>
+
+    <!-- CSV → ClickHouse -->
+    <section id="ingestContainer" class="space-y-8">
+      <h2 class="text-2xl font-bold border-b pb-2"><i class="fas fa-upload mr-2"></i>Ingest CSV into ClickHouse</h2>
+
+      <!-- File & Table Name -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-file-csv text-gray-600"></i><span>CSV File:</span>
+          </label>
+          <input id="csvFile" type="file" accept=".csv"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+          <p id="fileInfo" class="mt-1 text-sm text-gray-500">Rows: –, Columns: –</p>
+        </div>
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-table text-gray-600"></i><span>Target Table Name:</span>
+          </label>
+          <input id="tableName" type="text" placeholder="my_clickhouse_table"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+      </div>
+
+      <!-- Preview CSV -->
+      <div class="space-y-4">
+        <p class="font-medium"><i class="fas fa-eye mr-2"></i>Preview CSV</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label class="font-medium mb-1">Rows to preview:</label>
+            <select id="previewRowSelect" class="w-full p-3 border border-gray-300 rounded-lg">
+              <option>5</option><option selected>10</option><option>25</option><option>50</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-medium mb-1">Cols to preview:</label>
+            <select id="previewColSelect" class="w-full p-3 border border-gray-300 rounded-lg">
+              <option value="">All</option><option>2</option><option>5</option><option>10</option>
+            </select>
+          </div>
+        </div>
+        <button id="previewBtn"
+                class="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+          <i class="fas fa-search"></i><span>Preview CSV</span>
+        </button>
+        <div id="previewArea" class="overflow-x-auto"></div>
+      </div>
+
+      <!-- Ingest Slice -->
+      <div class="space-y-4">
+        <p class="font-medium"><i class="fas fa-cogs mr-2"></i>Select slice to ingest</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div>
+            <label class="font-medium mb-1">Start row:</label>
+            <input id="startRowInput" type="number" min="1" placeholder="1"
+                   class="w-full p-3 border border-gray-300 rounded-lg"/>
+          </div>
+          <div>
+            <label class="font-medium mb-1">Rows to ingest:</label>
+            <input id="ingestRowsInput" type="number" min="1" placeholder="All"
+                   class="w-full p-3 border border-gray-300 rounded-lg"/>
+          </div>
+          <div>
+            <label class="font-medium mb-1">Cols to ingest:</label>
+            <input id="ingestColsInput" type="number" min="1" placeholder="All"
+                   class="w-full p-3 border border-gray-300 rounded-lg"/>
+          </div>
+        </div>
+        <button id="ingestBtn"
+                class="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">
+          <i class="fas fa-database"></i><span>Ingest to ClickHouse</span>
+        </button>
+        <p id="ingestStatus" class="text-sm text-gray-500">Status: Idle</p>
+      </div>
+    </section>
+
+    <!-- ClickHouse → CSV -->
+    <section id="exportContainer" class="hidden space-y-8">
+      <h2 class="text-2xl font-bold border-b pb-2"><i class="fas fa-download mr-2"></i>Export ClickHouse to CSV</h2>
+
+      <!-- Connection -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-server text-gray-600"></i><span>Host:</span>
+          </label>
+          <input id="chHost" type="text" placeholder="localhost"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-plug text-gray-600"></i><span>Port:</span>
+          </label>
+          <input id="chPort" type="text" placeholder="8123"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-database text-gray-600"></i><span>Database:</span>
+          </label>
+          <input id="chDB" type="text" placeholder="default"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-user text-gray-600"></i><span>User:</span>
+          </label>
+          <input id="chUser" type="text" placeholder="default"
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+        <div>
+          <label class="flex items-center space-x-2 font-medium mb-1">
+            <i class="fas fa-key text-gray-600"></i><span>JWT Token:</span>
+          </label>
+          <input id="chToken" type="text" placeholder="JWT" 
+                 class="w-full p-3 border border-gray-300 rounded-lg"/>
+        </div>
+        <div class="flex items-center mt-6">
+          <button id="loadTablesBtn"
+                  class="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+            <i class="fas fa-table"></i><span>Load Tables</span>
+          </button>
+        </div>
+      </div>
+      <p id="chExportStatus" class="text-sm text-gray-500">Status: Idle</p>
+
+      <!-- Table selector & info -->
+      <div class="space-y-4">
+        <label class="flex items-center space-x-2 font-medium mb-1">
+          <i class="fas fa-th-list text-gray-600"></i><span>Select Table:</span>
+        </label>
+        <select id="chTable" class="w-full p-3 border border-gray-300 rounded-lg">
+          <option value="">— load tables first —</option>
+        </select>
+        <p id="tableInfo" class="text-sm text-gray-500">Table info: —</p>
+      </div>
+
+      <!-- Preview Table -->
+      <div class="space-y-4">
+        <p class="font-medium"><i class="fas fa-eye mr-2"></i>Preview Table</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label class="font-medium mb-1">Rows to preview:</label>
+            <select id="chPrevRows" class="w-full p-3 border border-gray-300 rounded-lg">
+              <option>5</option><option selected>10</option><option>25</option><option>50</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-medium mb-1">Cols to preview:</label>
+            <select id="chPrevCols" class="w-full p-3 border border-gray-300 rounded-lg">
+              <option value="">All</option><option>2</option><option>5</option><option>10</option>
+            </select>
+          </div>
+        </div>
+        <button id="chPreviewBtn"
+                class="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+          <i class="fas fa-search"></i><span>Preview</span>
+        </button>
+        <div id="chPreviewArea" class="overflow-x-auto"></div>
+      </div>
+
+      <!-- Download CSV -->
+      <div class="space-y-4">
+        <p class="font-medium"><i class="fas fa-download mr-2"></i>Download CSV</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label class="font-medium mb-1">Rows to include:</label>
+            <input id="chExpRows" type="number" min="1" placeholder="All"
+                   class="w-full p-3 border border-gray-300 rounded-lg"/>
+          </div>
+          <div>
+            <label class="font-medium mb-1">Cols to include:</label>
+            <input id="chExpCols" type="number" min="1" placeholder="All"
+                   class="w-full p-3 border border-gray-300 rounded-lg"/>
+          </div>
+        </div>
+        <button id="chExportBtn"
+                class="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">
+          <i class="fas fa-file-csv"></i><span>Download CSV</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api/source-csv';
+
+    // Toggle ingress/export views
+    document.getElementById('sourceSelect')
+      .addEventListener('change', e => {
+        document.getElementById('ingestContainer')
+          .classList.toggle('hidden', e.target.value !== 'ingest');
+        document.getElementById('exportContainer')
+          .classList.toggle('hidden', e.target.value !== 'export');
+      });
+
+    // ─── CSV → ClickHouse logic ─────────────────────────────────────────────
+    const csvFileEl    = document.getElementById('csvFile');
+    const fileInfoEl   = document.getElementById('fileInfo');
+    const tableNameEl  = document.getElementById('tableName');
+    const previewBtn   = document.getElementById('previewBtn');
+    const previewArea  = document.getElementById('previewArea');
+    const previewRowSel= document.getElementById('previewRowSelect');
+    const previewColSel= document.getElementById('previewColSelect');
+    const startRowIn   = document.getElementById('startRowInput');
+    const ingestRowsIn = document.getElementById('ingestRowsInput');
+    const ingestColsIn = document.getElementById('ingestColsInput');
+    const ingestBtn    = document.getElementById('ingestBtn');
+    const ingestStatus = document.getElementById('ingestStatus');
+    let fileRowCount=0, fileColCount=0;
+
+    csvFileEl.addEventListener('change', async () => {
+      const f = csvFileEl.files[0];
+      if (!f) {
+        fileInfoEl.textContent = 'Rows: –, Columns: –';
+        fileRowCount = fileColCount = 0;
+        return;
+      }
+      const txt = await f.text();
+      const lines = txt.split(/\r?\n/).filter(l=>l.trim());
+      fileRowCount = Math.max(0, lines.length-1);
+      fileColCount = lines[0]?.split(',').length||0;
+      fileInfoEl.textContent =
+        `Rows: ${fileRowCount.toLocaleString()}, Columns: ${fileColCount.toLocaleString()}`;
+      startRowIn.max = fileRowCount;
+      ingestRowsIn.max = fileRowCount;
+      ingestColsIn.max = fileColCount;
+    });
+
+    previewBtn.addEventListener('click', async () => {
+      const f = csvFileEl.files[0];
+      if (!f) return alert('Select CSV first');
+      const txt = await f.text();
+      const lines = txt.split(/\r?\n/).filter(l=>l.trim());
+      const nr = parseInt(previewRowSel.value,10);
+      const nc = previewColSel.value?parseInt(previewColSel.value,10):null;
+      const slice = lines.slice(0,nr+1);
+      const parsed = slice.map(l=> {
+        const c = l.split(',');
+        return nc?c.slice(0,nc):c;
+      });
+      const hdr = parsed[0]||[], rows=parsed.slice(1);
+      let html='<table class="min-w-full bg-white"><thead><tr>';
+      hdr.forEach(h=>html+=`<th class="px-4 py-2 border">${h}</th>`);
+      html+='</tr></thead><tbody>';
+      rows.forEach(r=>{
+        html+='<tr>';
+        hdr.forEach((_,i)=>html+=`<td class="px-4 py-2 border">${r[i]||''}</td>`);
+        html+='</tr>';
+      });
+      html+='</tbody></table>';
+      previewArea.innerHTML=html;
+    });
+
+    ingestBtn.addEventListener('click', async () => {
+      const f=csvFileEl.files[0], tbl=tableNameEl.value.trim();
+      if(!f||!tbl) return alert('CSV & table name required');
+      const sr = startRowIn.value?parseInt(startRowIn.value,10):1;
+      const rv = ingestRowsIn.value?parseInt(ingestRowsIn.
+value,10):null;
+      const cv = ingestColsIn.value?parseInt(ingestColsIn.value,10):null;
+      if(sr<1||sr>fileRowCount){
+        ingestStatus.textContent=`Error: startRow ${sr} out of 1–${fileRowCount}`;
+        return;
+      }
+      if(rv!==null&&(rv<1||sr+rv-1>fileRowCount)){
+        ingestStatus.textContent=`Error: rows out of range (max ${fileRowCount-sr+1})`;
+        return;
+      }
+      if(cv!==null&&(cv<1||cv>fileColCount)){
+        ingestStatus.textContent=`Error: cols out of 1–${fileColCount}`;
+        return;
+      }
+      ingestStatus.textContent='Ingesting…';
+      const form=new FormData();
+      form.append('file',f);
+      form.append('tableName',tbl);
+      form.append('startRow',sr);
+      if(rv!==null) form.append('rows',rv);
+      if(cv!==null) form.append('cols',cv);
+      try{
+        const res=await fetch(`${API_BASE}/ingest`,{method:'POST',body:form});
+        const b=await res.json();
+        if(b.success){
+          ingestStatus.textContent=`Ingested ${b.ingestedRows} rows × ${b.ingestedCols||'all'} cols`;
+        } else {
+          ingestStatus.textContent=`Error: ${b.error}`;
+        }
+      }catch(e){
+        ingestStatus.textContent=`Fetch error: ${e.message}`;
+      }
+    });
+
+    // ─── ClickHouse → CSV logic ─────────────────────────────────────────────
+    const chHost        = document.getElementById('chHost');
+    const chPort        = document.getElementById('chPort');
+    const chDB          = document.getElementById('chDB');
+    const chUser        = document.getElementById('chUser');
+    const chToken       = document.getElementById('chToken');
+    const loadTablesBtn = document.getElementById('loadTablesBtn');
+    const chTable       = document.getElementById('chTable');
+    const tableInfo     = document.getElementById('tableInfo');
+    const chExportStatus= document.getElementById('chExportStatus');
+    const chPrevRows    = document.getElementById('chPrevRows');
+    const chPrevCols    = document.getElementById('chPrevCols');
+    const chPreviewBtn  = document.getElementById('chPreviewBtn');
+    const chPreviewArea = document.getElementById('chPreviewArea');
+    const chExpRows     = document.getElementById('chExpRows');
+    const chExpCols     = document.getElementById('chExpCols');
+    const chExportBtn   = document.getElementById('chExportBtn');
+
+    function connParams(){
+      return new URLSearchParams({
+        host:chHost.value.trim(),
+        port:chPort.value.trim(),
+        database:chDB.value.trim(),
+        user:chUser.value.trim(),
+        token:chToken.value.trim()
+      });
+    }
+
+    loadTablesBtn.addEventListener('click',async()=>{
+      tableInfo.textContent='Table info: —';
+      if(![chHost,chPort,chDB,chUser].every(i=>i.value.trim())){
+        chExportStatus.textContent='Error: host, port, database & user required';
+        return;
+      }
+      chExportStatus.textContent='Loading tables…';
+      try{
+        const res=await fetch(`${API_BASE}/tables?${connParams()}`);
+        if(!res.ok)throw new Error((await res.json()).error||res.statusText);
+        const{tables}=await res.json();
+        chTable.innerHTML=tables.map(t=>`<option>${t}</option>`).join('');
+        chExportStatus.textContent=`Loaded ${tables.length} tables.`;
+        if(tables.length){
+          chTable.value=tables[0];
+          chTable.dispatchEvent(new Event('change'));
+        }
+      }catch(e){
+        chExportStatus.textContent=`Error: ${e.message}`;
+      }
+    });
+
+    chTable.addEventListener('change',async()=>{
+      const tbl=chTable.value;
+      if(!tbl){
+        tableInfo.textContent='Table info: —'; return;
+      }
+      tableInfo.textContent='Table info: fetching…';
+      try{
+        const res=await fetch(`${API_BASE}/info/${encodeURIComponent(tbl)}?${connParams()}`);
+        if(!res.ok)throw new Error((await res.json()).error||res.statusText);
+        const{rowCount,colCount}=await res.json();
+        tableInfo.textContent=`Table has ${rowCount.toLocaleString()} rows and ${colCount} columns.`;
+      }catch(e){
+        tableInfo.textContent=`Error: ${e.message}`;
+      }
+    });
+
+    chPreviewBtn.addEventListener('click',async()=>{
+      if(!chTable.value){
+        chPreviewArea.innerHTML=`<p class="text-red-600">Select a table first.</p>`; return;
+      }
+      chPreviewArea.innerHTML='Loading preview…';
+      try{
+        const params=connParams();
+        params.set('rows',chPrevRows.value);
+        if(chPrevCols.value)params.set('cols',chPrevCols.value);
+        const res=await fetch(`${API_BASE}/export/${encodeURIComponent(chTable.value)}/preview?${params}`);
+        if(!res.ok)throw new Error((await res.json()).error||res.statusText);
+        const{columns,rows}=await res.json();
+        let html='<table class="min-w-full bg-white"><thead><tr>';
+        columns.forEach(c=>html+=`<th class="px-4 py-2 border">${c}</th>`);
+        html+='</tr></thead><tbody>';
+        rows.forEach(r=>{
+          html+='<tr>';
+          columns.forEach(c=>html+=`<td class="px-4 py-2 border">${r[c]||''}</td>`);
+          html+='</tr>';
+        });
+        html+='</tbody></table>';
+        chPreviewArea.innerHTML=html;
+      }catch(e){
+        chPreviewArea.innerHTML=`<p class="text-red-600">Error: ${e.message}</p>`;
+      }
+    });
+
+    chExportBtn.addEventListener('click',()=>{
+      if(!chTable.value){
+        chExportStatus.textContent='Select a table first.'; return;
+      }
+      const params=connParams();
+      if(chExpRows.value)params.set('rows',chExpRows.value);
+      if(chExpCols.value)params.set('cols',chExpCols.value);
+      chExportStatus.textContent='Preparing download…';
+      window.location.href=`${API_BASE}/export/${encodeURIComponent(chTable.value)}?${params}`;
+      chExportStatus.textContent='Download started';
+    });
+  </script>
+</body>
+</html>
+```
