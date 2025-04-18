@@ -20,6 +20,11 @@ Both flows support previewing data slices (rows/columns) before executing the fu
 10. [Contributing](#contributing)
 11. [License](#license)
 
+## Images
+
+![ FlatFile --> ClickHouse](Images/image.png)
+![ ClickHouse -->FlatFile ](Images/imagecopy.png)
+
 ## Features
 
 * **CSV → ClickHouse**
