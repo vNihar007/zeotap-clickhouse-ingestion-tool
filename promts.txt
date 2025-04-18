@@ -1,0 +1,25 @@
+1. “Generate a Docker Compose file to launch ClickHouse with JWT authentication enabled.”  
+2. “Write a shell script that accepts `--host`, `--port`, `--user`, and `--token` arguments and validates the ClickHouse connection.”  
+3. “Create a Node.js utility to inspect a CSV header and auto‑generate a ClickHouse table schema.”  
+4. “Implement batch insertion of CSV rows into ClickHouse using the official Node.js client.”  
+5. “Develop an Express.js route to fetch and return the list of tables from a ClickHouse database.”  
+6. “Write middleware for Express that injects the JWT token into all ClickHouse client requests.”  
+7. “Draft a Python function using `clickhouse-connect` to stream query results into a CSV file.”  
+8. “Show how to map CSV data types (e.g., INT, FLOAT, DATE) to ClickHouse column definitions in SQL.”  
+9. “Implement retry logic with exponential backoff in Node.js for transient network errors during ingestion.”  
+10. “Write a pytest that spins up a Dockerized ClickHouse instance and verifies row counts after ingestion.”  
+11. “Outline a Prometheus exporter in Node.js exposing metrics: `ingestion_total`, `ingestion_errors`, and `rows_processed`.”  
+12. “Provide a README snippet explaining setup steps for the ingestion tool, including environment variables and JWT configuration.”  
+13. “Generate HTML/CSS for a two‑tab UI: one for ‘ClickHouse → CSV’ and one for ‘CSV → ClickHouse’.”  
+14. “Design a React form with inputs for Host, Port, Database, User, and JWT Token for ClickHouse.”  
+15. “Create a React file‑upload component that accepts a CSV and lets the user specify a delimiter.”  
+16. “Implement a dropdown toggle in React to switch between ingestion modes (‘ClickHouse→CSV’ vs. ‘CSV→ClickHouse’).”  
+17. “Write an Express.js route `/api/source-csv/ingest` using Multer to handle CSV uploads.”  
+18. “Configure Multer middleware in Express for parsing multipart form data on `/api/source-csv/ingest`.”  
+19. “Demonstrate how to connect to ClickHouse with JWT authentication using a Node.js or Java client.”  
+20. “Implement an Express.js endpoint `/api/info/tables` that queries ClickHouse for its table list and returns JSON.”  
+21. “Add an Express.js endpoint `/api/info/tables/:table` to fetch and return column names for a specified ClickHouse table.”  
+22. “Write an Express.js route `/api/export/:table` that streams ClickHouse query results back as a CSV file.”  
+23. “Implement React checkboxes populated from `/api/info/tables/:table` so users can select which columns to ingest.”  
+24. “Add a React progress‑bar component that updates based on ingestion progress events from `/api/source-csv/ingest`.”  
+25. “Draft Express error‑handling middleware to catch and return user‑friendly messages for connection or auth failures.”
