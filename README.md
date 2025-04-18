@@ -23,7 +23,7 @@ Both flows support previewing data slices (rows/columns) before executing the fu
 ## Images
 
 ![ FlatFile --> ClickHouse](Images/image.png)
-![ ClickHouse -->FlatFile ](Images/imagecopy.png)
+![ ClickHouse -->FlatFile ](Images/image copy.png)
 
 ## Features
 
